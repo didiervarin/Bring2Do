@@ -1,4 +1,4 @@
-name = "flo-pouille"
+name = "bring2do"
 main = "src/worker.js"
 compatibility_date = "2026-06-01"
 
