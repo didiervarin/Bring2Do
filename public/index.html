@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Flo & Pouille</title>
+  <meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16181a" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Flo & Pouille">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Connexion -->
+  <section id="login" class="screen" hidden>
+    <div class="login-box">
+      <div class="logo">🛒✅</div>
+      <h1>Flo & Pouille</h1>
+      <p class="muted">Courses et tâches partagées</p>
+      <div class="who" role="radiogroup" aria-label="Qui es-tu ?">
+        <button type="button" class="who-btn" data-user="flo">Flo</button>
+        <button type="button" class="who-btn" data-user="pouille">Pouille</button>
+      </div>
+      <form id="login-form" autocomplete="on">
+        <input type="text" name="username" id="login-user" autocomplete="username" hidden>
+        <input type="password" id="login-pass" placeholder="Mot de passe" autocomplete="current-password" required>
+        <button type="submit" class="primary" id="login-submit" disabled>Se connecter</button>
+        <p id="login-error" class="error" role="alert"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Application -->
+  <section id="app" class="screen" hidden>
+    <header class="topbar">
+      <h1 id="title">Courses</h1>
+      <button type="button" class="icon-btn" id="open-settings" aria-label="Réglages">⚙︎</button>
+    </header>
+
+    <main>
+      <!-- Courses -->
+      <div id="view-courses" class="view">
+        <form id="add-item" class="add-bar" autocomplete="off">
+          <input id="item-input" type="text" placeholder="Ajouter un article (ex. lait, 2 L)" enterkeyhint="done" autocapitalize="sentences">
+        </form>
+        <div id="suggestions" class="suggestions" hidden></div>
+        <div id="to-buy"></div>
+        <div id="recent-wrap">
+          <h2 class="section-title">Récemment utilisés</h2>
+          <div id="recent" class="tiles"></div>
+        </div>
+        <p class="hint">Touche un article pour le retirer de la liste. Appui long pour le modifier.</p>
+      </div>
+
+      <!-- Tâches -->
+      <div id="view-taches" class="view" hidden>
+        <div class="filter" role="tablist">
+          <button type="button" class="seg active" data-filter="all">Toutes</button>
+          <button type="button" class="seg" data-filter="mine">Les miennes</button>
+        </div>
+        <form id="add-task" class="add-bar" autocomplete="off">
+          <input id="task-input" type="text" placeholder="Nouvelle tâche" enterkeyhint="done" autocapitalize="sentences">
+          <button type="button" id="task-more" class="icon-btn small" aria-label="Ajouter avec détails">＋</button>
+        </form>
+        <div id="task-list"></div>
+      </div>
+    </main>
+
+    <nav class="tabbar">
+      <button type="button" class="tab active" data-view="courses">
+        <span class="tab-icon">🛒</span><span>Courses</span><span class="count" id="count-courses" hidden></span>
+      </button>
+      <button type="button" class="tab" data-view="taches">
+        <span class="tab-icon">✅</span><span>Tâches</span><span class="count alert" id="count-taches" hidden></span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- Feuille : article -->
+  <dialog id="item-sheet" class="sheet">
+    <form method="dialog" id="item-form">
+      <h2>Modifier l'article</h2>
+      <label>Nom<input id="item-name" type="text" maxlength="60" required></label>
+      <label>Précision<input id="item-spec" type="text" maxlength="60" placeholder="ex. 2 L, bio, 6 œufs"></label>
+      <label>Rayon<select id="item-category"></select></label>
+      <div class="sheet-actions">
+        <button type="button" class="danger" id="item-delete">Supprimer</button>
+        <span class="spacer"></span>
+        <button type="button" id="item-cancel">Annuler</button>
+        <button type="submit" class="primary">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Feuille : tâche -->
+  <dialog id="task-sheet" class="sheet">
+    <form method="dialog" id="task-form">
+      <h2 id="task-sheet-title">Nouvelle tâche</h2>
+      <label>Titre<input id="task-title" type="text" maxlength="200" required></label>
+      <label>Échéance
+        <span class="row">
+          <input id="task-due" type="datetime-local">
+          <button type="button" id="task-due-clear" class="link">Aucune</button>
+        </span>
+      </label>
+      <div class="quick-dates" id="quick-dates">
+        <button type="button" data-q="tonight">Ce soir 19h</button>
+        <button type="button" data-q="tomorrow">Demain 9h</button>
+        <button type="button" data-q="weekend">Samedi 10h</button>
+      </div>
+      <fieldset>
+        <legend>Attribuée à</legend>
+        <div class="segmented" id="task-assignee">
+          <button type="button" data-a="flo">Flo</button>
+          <button type="button" data-a="pouille">Pouille</button>
+          <button type="button" data-a="both">Les deux</button>
+        </div>
+      </fieldset>
+      <label>Note<textarea id="task-note" rows="3" maxlength="2000" placeholder="Détails (facultatif)"></textarea></label>
+      <p id="task-meta" class="muted small"></p>
+      <div class="sheet-actions">
+        <button type="button" class="danger" id="task-delete" hidden>Supprimer</button>
+        <span class="spacer"></span>
+        <button type="button" id="task-cancel">Annuler</button>
+        <button type="submit" class="primary">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Feuille : réglages -->
+  <dialog id="settings-sheet" class="sheet">
+    <form method="dialog">
+      <h2>Réglages</h2>
+      <p>Connecté en tant que <strong id="me-name"></strong></p>
+      <div class="card">
+        <h3>Notifications d'échéance</h3>
+        <p id="push-status" class="muted small"></p>
+        <div class="row wrap">
+          <button type="button" id="push-enable" class="primary">Activer les notifications</button>
+          <button type="button" id="push-test">Envoyer un test</button>
+        </div>
+      </div>
+      <div class="card" id="install-help" hidden>
+        <h3>Installer l'app</h3>
+        <p class="small">Dans Safari : bouton <strong>Partager</strong> → <strong>Sur l'écran d'accueil</strong>. Ouvre ensuite l'app depuis son icône et reconnecte-toi : les notifications et le badge ne marchent que dans l'app installée.</p>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="danger" id="logout">Se déconnecter</button>
+        <span class="spacer"></span>
+        <button type="submit">Fermer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

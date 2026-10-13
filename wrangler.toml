@@ -1,0 +1,25 @@
+name = "flo-pouille"
+main = "src/worker.js"
+compatibility_date = "2026-06-01"
+
+# Fichiers du site (HTML, CSS, JS, icônes)
+[assets]
+directory = "./public"
+
+# Base de données : remplace database_id par l'identifiant de ta base D1
+# (Cloudflare > Storage & Databases > D1 > ta base > Database ID)
+[[d1_databases]]
+binding = "DB"
+database_name = "flo-pouille"
+database_id = "REMPLACER_PAR_L_ID_DE_TA_BASE_D1"
+
+# Vérification des échéances chaque minute
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+# Contact exigé par les services de notification (Apple, Google)
+VAPID_SUBJECT = "mailto:REMPLACER_PAR_TON_EMAIL"
+
+[observability]
+enabled = true

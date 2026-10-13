@@ -1,0 +1,15 @@
+{
+  "name": "flo-pouille",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test/push.test.mjs"
+  },
+  "devDependencies": {
+    "http_ece": "^1.2.1",
+    "wrangler": "^4.149.0"
+  }
+}
