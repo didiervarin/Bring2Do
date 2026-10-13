@@ -19,7 +19,7 @@ crons = ["* * * * *"]
 
 [vars]
 # Contact exigé par les services de notification (Apple, Google)
-VAPID_SUBJECT = "mailto:REMPLACER_PAR_TON_EMAIL"
+VAPID_SUBJECT = "mailto:didier.varin@gmail.com"
 
 [observability]
 enabled = true
