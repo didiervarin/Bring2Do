@@ -172,7 +172,6 @@ main { padding: 0 16px calc(96px + var(--safe-bottom)); }
   .chip.pouille { background: #44263a; color: #f2b1d0; }
 }
 .late-group .group { outline: 1.5px solid color-mix(in srgb, var(--danger) 45%, transparent); }
-.more-done { display: block; margin: 10px auto 0; }
 
 /* ---------- Barre d'onglets ---------- */
 .tabbar {

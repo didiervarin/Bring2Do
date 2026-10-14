@@ -188,8 +188,7 @@ async function getState(env, user) {
        ORDER BY on_list DESC, COALESCE(last_used_at, updated_at) DESC LIMIT 400`).all(),
     env.DB.prepare(
       `SELECT id, title, note, due_at, assignee, done, done_at, done_by, created_by, created_at, updated_at FROM tasks
-       WHERE done = 0 OR done_at > ? ORDER BY done, due_at IS NULL, due_at, created_at`)
-      .bind(Date.now() - 30 * 86400e3).all(),
+       WHERE done = 0 ORDER BY due_at IS NULL, due_at, created_at`).all(),
     dueCount(env, user),
   ]);
   return { me: user, items: items.results, tasks: tasks.results, badge, now: Date.now() };
@@ -381,6 +380,8 @@ async function testPush(env, user) {
 // Appelé chaque minute par le déclencheur planifié.
 export async function checkDueTasks(env, now = Date.now()) {
   await ensureSchema(env);
+  // Les tâches faites sont supprimées (après une minute, le temps de pouvoir « Annuler »).
+  await env.DB.prepare(`DELETE FROM tasks WHERE done = 1 AND (done_at IS NULL OR done_at < ?)`).bind(now - 60e3).run();
   const due = (await env.DB.prepare(
     `SELECT * FROM tasks WHERE done = 0 AND notified = 0 AND due_at IS NOT NULL AND due_at <= ? ORDER BY due_at LIMIT 50`)
     .bind(now).all()).results;

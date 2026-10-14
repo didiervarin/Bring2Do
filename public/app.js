@@ -12,7 +12,6 @@ const state = {
   badge: 0,
   view: 'courses',
   filter: 'all',
-  showAllDone: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -429,14 +428,7 @@ function renderTasks() {
     html += `<section class="${cls}"><h2 class="section-title">${label} · ${list.length}</h2><div class="group">${list.map(taskHtml).join('')}</div></section>`;
   }
   if (!open.length) html += `<p class="empty">Rien à faire 🎉</p>`;
-  const done = tasks.filter((t) => t.done).sort((a, b) => b.done_at - a.done_at);
-  if (done.length) {
-    const shown = state.showAllDone ? done : done.slice(0, 5);
-    html += `<section><h2 class="section-title">Faites récemment</h2><div class="group">${shown.map(taskHtml).join('')}</div>
-      ${done.length > shown.length ? `<button type="button" class="more-done" id="more-done">Voir les ${done.length - shown.length} autres</button>` : ''}</section>`;
-  }
   $('#task-list').innerHTML = html;
-  $('#more-done')?.addEventListener('click', () => { state.showAllDone = true; renderTasks(); });
 }
 
 $('#task-list').addEventListener('click', (e) => {
