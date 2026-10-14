@@ -45,10 +45,21 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks (done, notified, due_at)`,
 ];
 
+// Colonnes ajoutées après coup (ignorées si elles existent déjà).
+const MIGRATIONS = [
+  `ALTER TABLE tasks ADD COLUMN private INTEGER NOT NULL DEFAULT 0`,
+];
+
 let schemaReady = null;
 function ensureSchema(env) {
   if (!schemaReady) {
-    schemaReady = env.DB.batch(SCHEMA.map((s) => env.DB.prepare(s))).catch((e) => {
+    schemaReady = env.DB.batch(SCHEMA.map((s) => env.DB.prepare(s))).then(async () => {
+      for (const m of MIGRATIONS) {
+        try { await env.DB.prepare(m).run(); } catch (e) {
+          if (!/duplicate column/i.test(String(e?.message || e))) throw e;
+        }
+      }
+    }).catch((e) => {
       schemaReady = null;
       throw e;
     });
@@ -183,8 +194,9 @@ async function logout(request, env) {
 async function dueCount(env, user, now = Date.now()) {
   const row = await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM tasks
-     WHERE done = 0 AND due_at IS NOT NULL AND due_at <= ? AND (assignee = ? OR assignee = 'both')`,
-  ).bind(now, user).first();
+     WHERE done = 0 AND due_at IS NOT NULL AND due_at <= ? AND (assignee = ? OR assignee = 'both')
+       AND (private = 0 OR created_by = ?)`,
+  ).bind(now, user, user).first();
   return row.n;
 }
 
@@ -194,8 +206,8 @@ async function getState(env, user) {
       `SELECT id, name, spec, category, on_list, added_by, updated_at, last_used_at FROM items
        ORDER BY on_list DESC, COALESCE(last_used_at, updated_at) DESC LIMIT 400`).all(),
     env.DB.prepare(
-      `SELECT id, title, note, due_at, assignee, done, done_at, done_by, created_by, created_at, updated_at FROM tasks
-       WHERE done = 0 ORDER BY due_at IS NULL, due_at, created_at`).all(),
+      `SELECT id, title, note, due_at, assignee, private, done, done_at, done_by, created_by, created_at, updated_at FROM tasks
+       WHERE done = 0 AND (private = 0 OR created_by = ?) ORDER BY due_at IS NULL, due_at, created_at`).bind(user).all(),
     dueCount(env, user),
   ]);
   return { me: user, items: items.results, tasks: tasks.results, badge, now: Date.now() };
@@ -274,24 +286,30 @@ async function addTask(request, env, user) {
   if (!title) return err('Titre vide');
   const due = parseDue(body.due_at);
   if (due === undefined) return err('Échéance invalide');
-  const assignee = ASSIGNEES.includes(body.assignee) ? body.assignee : 'both';
+  const priv = body.private ? 1 : 0;
+  // Une tâche privée n'est attribuée qu'à son auteur.
+  const assignee = priv ? user : ASSIGNEES.includes(body.assignee) ? body.assignee : 'both';
   const now = Date.now();
   const id = newId();
   // Une échéance déjà très ancienne à la création ne déclenche pas de notification.
   const notified = slotsPassed(due, now);
   await env.DB.prepare(
-    `INSERT INTO tasks (id, title, note, due_at, assignee, created_by, created_at, updated_at, notified)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(id, title, clean(body.note, 2000), due, assignee, user, now, now, notified).run();
+    `INSERT INTO tasks (id, title, note, due_at, assignee, private, created_by, created_at, updated_at, notified)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(id, title, clean(body.note, 2000), due, assignee, priv, user, now, now, notified).run();
   return json({ id }, 201);
 }
 
 async function updateTask(request, env, user, id) {
   const body = await readJson(request);
   const t = await env.DB.prepare(`SELECT * FROM tasks WHERE id = ?`).bind(id).first();
-  if (!t) return err('Tâche introuvable', 404);
+  // Une tâche privée de l'autre est inexistante pour soi.
+  if (!t || (t.private && t.created_by !== user)) return err('Tâche introuvable', 404);
   const now = Date.now();
   let { title, note, due_at, assignee, done, done_at, done_by, notified } = t;
+  let priv = t.private ? 1 : 0;
+  // Seul l'auteur peut rendre sa tâche privée ou publique.
+  if (body.private !== undefined && t.created_by === user) priv = body.private ? 1 : 0;
   if (body.title !== undefined) {
     title = clean(body.title, 200);
     if (!title) return err('Titre vide');
@@ -308,6 +326,10 @@ async function updateTask(request, env, user, id) {
     if (body.assignee !== assignee && due_at !== null && due_at > now) notified = 0;
     assignee = body.assignee;
   }
+  if (priv && assignee !== t.created_by) {
+    if (due_at !== null && due_at > now) notified = 0;
+    assignee = t.created_by;
+  }
   if (body.done !== undefined) {
     const d = body.done ? 1 : 0;
     if (d !== done) {
@@ -317,14 +339,14 @@ async function updateTask(request, env, user, id) {
     }
   }
   await env.DB.prepare(
-    `UPDATE tasks SET title = ?, note = ?, due_at = ?, assignee = ?, done = ?, done_at = ?, done_by = ?,
+    `UPDATE tasks SET title = ?, note = ?, due_at = ?, assignee = ?, private = ?, done = ?, done_at = ?, done_by = ?,
      notified = ?, updated_at = ? WHERE id = ?`)
-    .bind(title, note, due_at, assignee, done, done_at, done_by, notified, now, id).run();
+    .bind(title, note, due_at, assignee, priv, done, done_at, done_by, notified, now, id).run();
   return json({ ok: true });
 }
 
-async function deleteTask(env, id) {
-  await env.DB.prepare(`DELETE FROM tasks WHERE id = ?`).bind(id).run();
+async function deleteTask(env, user, id) {
+  await env.DB.prepare(`DELETE FROM tasks WHERE id = ? AND (private = 0 OR created_by = ?)`).bind(id, user).run();
   return json({ ok: true });
 }
 
@@ -450,7 +472,7 @@ async function handleApi(request, env, url) {
   if (path === '/api/tasks' && method === 'POST') return addTask(request, env, user);
   m = path.match(/^\/api\/tasks\/([a-f0-9]+)$/);
   if (m && method === 'PATCH') return updateTask(request, env, user, m[1]);
-  if (m && method === 'DELETE') return deleteTask(env, m[1]);
+  if (m && method === 'DELETE') return deleteTask(env, user, m[1]);
 
   if (path === '/api/push/subscribe' && method === 'POST') return subscribe(request, env, user);
   if (path === '/api/push/unsubscribe' && method === 'POST') return unsubscribe(request, env);

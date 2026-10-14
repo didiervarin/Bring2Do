@@ -401,7 +401,7 @@ function taskHtml(t) {
   const late = !t.done && t.due_at && t.due_at <= now();
   const parts = [];
   if (t.due_at) parts.push(`<span class="due${late ? ' late' : ''}">${late ? '⏰ ' : '🗓 '}${esc(formatDue(t.due_at))}</span>`);
-  parts.push(`<span class="chip ${t.assignee}">${esc(NAMES[t.assignee])}</span>`);
+  parts.push(t.private ? `<span class="chip ${t.assignee}">🔒 Privée</span>` : `<span class="chip ${t.assignee}">${esc(NAMES[t.assignee])}</span>`);
   if (t.done && t.done_by) parts.push(`<span>fait par ${esc(NAMES[t.done_by])}</span>`);
   if (t.note) parts.push(`<span class="note">${esc(t.note.split('\n')[0])}</span>`);
   return `<div class="task${t.done ? ' done' : ''}" data-id="${t.id}">
@@ -474,7 +474,17 @@ function setAssignee(a) {
   sheetAssignee = a;
   document.querySelectorAll('#task-assignee button').forEach((b) => b.classList.toggle('active', b.dataset.a === a));
 }
-document.querySelectorAll('#task-assignee button').forEach((b) => b.addEventListener('click', () => setAssignee(b.dataset.a)));
+document.querySelectorAll('#task-assignee button').forEach((b) => b.addEventListener('click', () => {
+  if (!$('#task-private').checked) setAssignee(b.dataset.a);
+}));
+// Privée : attribuée uniquement à l'auteur, les autres choix sont verrouillés.
+function applyPrivate() {
+  const priv = $('#task-private').checked;
+  const author = editingTask ? editingTask.created_by : state.me;
+  if (priv) setAssignee(author);
+  document.querySelectorAll('#task-assignee button').forEach((b) => { b.disabled = priv && b.dataset.a !== author; });
+}
+$('#task-private').addEventListener('change', applyPrivate);
 
 function openTaskSheet(task, title = '') {
   editingTask = task;
@@ -483,6 +493,10 @@ function openTaskSheet(task, title = '') {
   $('#task-due').value = task?.due_at ? toLocalInput(task.due_at) : '';
   $('#task-note').value = task?.note || '';
   setAssignee(task ? task.assignee : 'both');
+  $('#task-private').checked = !!task?.private;
+  // Seul l'auteur peut changer ce réglage.
+  $('#task-private-row').hidden = !!task && task.created_by !== state.me;
+  applyPrivate();
   $('#task-delete').hidden = !task;
   $('#task-meta').textContent = task
     ? `Créée par ${NAMES[task.created_by] || '?'} le ${new Date(task.created_at).toLocaleDateString('fr-FR')}`
@@ -511,6 +525,7 @@ $('#task-form').addEventListener('submit', (e) => {
     assignee: sheetAssignee,
     note: $('#task-note').value.trim(),
   };
+  if (!editingTask || editingTask.created_by === state.me) body.private = $('#task-private').checked ? 1 : 0;
   if (!body.title) return;
   $('#task-sheet').close();
   $('#task-input').value = '';
