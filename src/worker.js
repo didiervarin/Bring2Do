@@ -12,7 +12,14 @@ const ASSIGNEES = ['flo', 'pouille', 'both'];
 const SESSION_DAYS = 365;
 const MAX_ATTEMPTS = 8;          // essais de mot de passe ratés…
 const ATTEMPT_WINDOW = 15 * 60e3; // …par fenêtre de 15 minutes
-const NOTIFY_MAX_LATE = 24 * 3600e3; // pas de notif pour une échéance passée depuis plus de 24 h
+const DAY = 86400e3;
+const NOTIFY_MAX_LATE = 3600e3; // un rappel manqué de plus d'1 h n'est pas rattrapé (le suivant viendra le lendemain)
+// `notified` = nombre de rappels déjà passés. Rappel n° k (k = 0, 1, 2…) à due_at + k jours,
+// tant que la tâche n'est pas faite.
+function slotsPassed(due, now) {
+  if (due === null || due > now - 5 * 60e3) return 0;
+  return Math.floor((now - 5 * 60e3 - due) / DAY) + 1;
+}
 
 // ---------------------------------------------------------------------------
 // Schéma de la base D1 : créé automatiquement au premier appel.
@@ -271,7 +278,7 @@ async function addTask(request, env, user) {
   const now = Date.now();
   const id = newId();
   // Une échéance déjà très ancienne à la création ne déclenche pas de notification.
-  const notified = due !== null && due < now - NOTIFY_MAX_LATE ? 1 : 0;
+  const notified = slotsPassed(due, now);
   await env.DB.prepare(
     `INSERT INTO tasks (id, title, note, due_at, assignee, created_by, created_at, updated_at, notified)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -293,7 +300,7 @@ async function updateTask(request, env, user, id) {
   if (body.due_at !== undefined) {
     const d = parseDue(body.due_at);
     if (d === undefined) return err('Échéance invalide');
-    if (d !== due_at) notified = d !== null && d < now - NOTIFY_MAX_LATE ? 1 : 0;
+    if (d !== due_at) notified = slotsPassed(d, now);
     due_at = d;
   }
   if (body.assignee !== undefined) {
@@ -383,20 +390,23 @@ export async function checkDueTasks(env, now = Date.now()) {
   // Les tâches faites sont supprimées (après une minute, le temps de pouvoir « Annuler »).
   await env.DB.prepare(`DELETE FROM tasks WHERE done = 1 AND (done_at IS NULL OR done_at < ?)`).bind(now - 60e3).run();
   const due = (await env.DB.prepare(
-    `SELECT * FROM tasks WHERE done = 0 AND notified = 0 AND due_at IS NOT NULL AND due_at <= ? ORDER BY due_at LIMIT 50`)
+    `SELECT * FROM tasks WHERE done = 0 AND due_at IS NOT NULL AND due_at + notified * ${DAY} <= ? ORDER BY due_at LIMIT 50`)
     .bind(now).all()).results;
   let notifications = 0;
   for (const t of due) {
-    // On marque d'abord, pour ne jamais notifier deux fois la même échéance.
-    const upd = await env.DB.prepare(`UPDATE tasks SET notified = 1 WHERE id = ? AND notified = 0`).bind(t.id).run();
+    // Rappel du jour (k) : le premier à l'échéance, puis chaque jour à la même heure.
+    const k = Math.floor((now - t.due_at) / DAY);
+    // On marque d'abord, pour ne jamais envoyer deux fois le même rappel.
+    const upd = await env.DB.prepare(`UPDATE tasks SET notified = ? WHERE id = ? AND notified = ?`)
+      .bind(k + 1, t.id, t.notified).run();
     if (!upd.meta?.changes) continue;
-    if (t.due_at < now - NOTIFY_MAX_LATE) continue;
+    if (now - (t.due_at + k * DAY) > NOTIFY_MAX_LATE) continue;
     const targets = t.assignee === 'both' ? ['flo', 'pouille'] : [t.assignee];
     for (const user of targets) {
       const badge = await dueCount(env, user, now);
       const r = await notifyUser(env, user, {
         title: `⏰ ${t.title}`,
-        body: `Échéance : ${formatDue(t.due_at)}${t.note ? '\n' + t.note.slice(0, 120) : ''}`,
+        body: `${k ? `En retard depuis ${k} jour${k > 1 ? 's' : ''} · ` : ''}Échéance : ${formatDue(t.due_at)}${t.note ? '\n' + t.note.slice(0, 120) : ''}`,
         badge,
         tag: `task-${t.id}`,
         url: '/#taches',
