@@ -219,7 +219,7 @@ function updateAppBadge() {
 
 // --- Courses -----------------------------------------------------------------
 function tileHtml(item, recent) {
-  const by = !recent && item.added_by && item.added_by !== state.me ? NAMES[item.added_by]?.[0] : '';
+  const by = !recent && item.added_by ? NAMES[item.added_by]?.[0] : '';
   return `<button type="button" class="tile${recent ? ' recent' : ''}" data-id="${item.id}">
     ${by ? `<span class="by" title="Ajouté par ${esc(NAMES[item.added_by])}">${esc(by)}</span>` : ''}
     <span class="e">${emojiFor(item)}</span>
