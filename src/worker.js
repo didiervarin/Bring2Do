@@ -461,7 +461,12 @@ export default {
         return err('Erreur serveur', 500);
       }
     }
-    return env.ASSETS.fetch(request);
+    try {
+      return await env.ASSETS.fetch(request);
+    } catch (e) {
+      // Fichier absent : on répond 404 proprement au lieu d'une erreur 1101.
+      return new Response('Introuvable', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
   },
 
   async scheduled(event, env, ctx) {
