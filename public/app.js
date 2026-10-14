@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY_BY_ID, guess, emojiFor, normalize } from './catalog.js';
+import { guess, emojiFor, normalize } from './catalog.js';
 
 const $ = (sel) => document.querySelector(sel);
 const NAMES = { flo: 'Flo', pouille: 'Pouille', both: 'Les deux' };
@@ -235,12 +235,9 @@ function renderCourses() {
   if (!toBuy.length) {
     html = `<p class="empty">La liste est vide 🎉</p>`;
   } else {
-    for (const cat of CATEGORIES) {
-      const list = toBuy.filter((i) => (CATEGORY_BY_ID[i.category] ? i.category : 'autre') === cat.id)
-        .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-      if (!list.length) continue;
-      html += `<h2 class="section-title">${cat.emoji} ${esc(cat.label)}</h2><div class="tiles">${list.map((i) => tileHtml(i, false)).join('')}</div>`;
-    }
+    // Liste unique, dans l'ordre d'ajout (le plus récent à la fin)
+    const list = [...toBuy].sort((a, b) => a.updated_at - b.updated_at);
+    html = `<div class="tiles">${list.map((i) => tileHtml(i, false)).join('')}</div>`;
   }
   $('#to-buy').innerHTML = html;
 
@@ -288,7 +285,7 @@ function toggleItem(id, tileEl) {
   const prevSpec = item.spec;
   tileEl?.classList.add('leaving');
   item.on_list = onList ? 1 : 0;
-  if (!onList) { item.last_used_at = now(); item.spec = ''; } else { item.added_by = state.me; }
+  if (!onList) { item.last_used_at = now(); item.spec = ''; } else { item.added_by = state.me; item.updated_at = now(); }
   setTimeout(render, 160);
   mutate('PATCH', `/api/items/${id}`, { on_list: onList }).then(() => {
     if (!onList) {
@@ -324,7 +321,7 @@ function renderSuggestions() {
     html += `<button type="button" data-id="${i.id}"><span class="e">${emojiFor(i)}</span><span>${esc(i.name)}${spec ? ` <span class="muted">(${esc(spec)})</span>` : ''}</span><span class="tag">${i.on_list ? 'déjà dans la liste' : ''}</span></button>`;
   }
   if (!exact) {
-    html += `<button type="button" data-new="1"><span class="e">${g.emoji || '➕'}</span><span>Ajouter « ${esc(name)} »${spec ? ` <span class="muted">(${esc(spec)})</span>` : ''}</span><span class="tag">${esc(CATEGORY_BY_ID[g.category].label)}</span></button>`;
+    html += `<button type="button" data-new="1"><span class="e">${g.emoji || '➕'}</span><span>Ajouter « ${esc(name)} »${spec ? ` <span class="muted">(${esc(spec)})</span>` : ''}</span></button>`;
   }
   box.innerHTML = html;
   box.hidden = false;
@@ -354,18 +351,16 @@ function addItem(name, spec) {
   const existing = state.items.find((i) => normalize(i.name) === normalize(name));
   const body = { name, spec };
   if (existing) {
+    if (!existing.on_list) existing.updated_at = now();
     existing.on_list = 1; existing.spec = spec; existing.added_by = state.me;
   } else {
-    body.category = guess(name).category;
-    state.items.unshift({ id: `tmp${Math.random()}`, name, spec, category: body.category, on_list: 1, added_by: state.me, updated_at: now() });
+    state.items.push({ id: `tmp${Math.random()}`, name, spec, on_list: 1, added_by: state.me, updated_at: now() });
   }
   render();
   mutate('POST', '/api/items', body).catch(() => {});
 }
 
 // Feuille d'édition d'un article
-const catSelect = $('#item-category');
-catSelect.innerHTML = CATEGORIES.map((c) => `<option value="${c.id}">${c.emoji} ${esc(c.label)}</option>`).join('');
 let editingItem = null;
 
 function openItemSheet(id) {
@@ -374,14 +369,13 @@ function openItemSheet(id) {
   editingItem = item;
   $('#item-name').value = item.name;
   $('#item-spec').value = item.spec || '';
-  catSelect.value = CATEGORY_BY_ID[item.category] ? item.category : 'autre';
   $('#item-sheet').showModal();
 }
 $('#item-cancel').addEventListener('click', () => $('#item-sheet').close());
 $('#item-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const it = editingItem;
-  const body = { name: $('#item-name').value.trim(), spec: $('#item-spec').value.trim(), category: catSelect.value };
+  const body = { name: $('#item-name').value.trim(), spec: $('#item-spec').value.trim() };
   if (!body.name) return;
   Object.assign(it, body);
   $('#item-sheet').close();

@@ -207,8 +207,8 @@ async function addItem(request, env, user) {
   const existing = await env.DB.prepare(`SELECT id FROM items WHERE name_key = ?`).bind(key).first();
   if (existing) {
     await env.DB.prepare(
-      `UPDATE items SET on_list = 1, spec = ?, added_by = ?, updated_at = ?,
-       category = CASE WHEN ? THEN ? ELSE category END WHERE id = ?`)
+      `UPDATE items SET spec = ?, added_by = ?, updated_at = CASE WHEN on_list = 1 THEN updated_at ELSE ? END,
+       on_list = 1, category = CASE WHEN ? THEN ? ELSE category END WHERE id = ?`)
       .bind(spec, user, now, body.category ? 1 : 0, category, existing.id).run();
     return json({ id: existing.id });
   }
@@ -224,7 +224,7 @@ async function updateItem(request, env, user, id) {
   const item = await env.DB.prepare(`SELECT * FROM items WHERE id = ?`).bind(id).first();
   if (!item) return err('Article introuvable', 404);
   const now = Date.now();
-  let { name, name_key, spec, category, on_list, last_used_at, added_by } = item;
+  let { name, name_key, spec, category, on_list, last_used_at, added_by, updated_at } = item;
   if (body.name !== undefined) {
     const n = clean(body.name, 60);
     if (!n) return err('Nom vide');
@@ -240,13 +240,13 @@ async function updateItem(request, env, user, id) {
   if (body.on_list !== undefined) {
     const next = body.on_list ? 1 : 0;
     if (next === 0 && on_list === 1) { last_used_at = now; spec = ''; }
-    if (next === 1 && on_list === 0) added_by = user;
+    if (next === 1 && on_list === 0) { added_by = user; updated_at = now; } // remis en fin de liste
     on_list = next;
   }
   await env.DB.prepare(
     `UPDATE items SET name = ?, name_key = ?, spec = ?, category = ?, on_list = ?, last_used_at = ?, added_by = ?, updated_at = ?
      WHERE id = ?`)
-    .bind(name, name_key, spec, category, on_list, last_used_at, added_by, now, id).run();
+    .bind(name, name_key, spec, category, on_list, last_used_at, added_by, updated_at, id).run();
   return json({ ok: true });
 }
 
