@@ -276,6 +276,12 @@ function bindTiles(container) {
 }
 bindTiles($('#to-buy'));
 bindTiles($('#recent'));
+// « Récemment utilisés » : articles masqués par défaut, un appui sur le titre les affiche ou les masque.
+$('#recent-toggle').addEventListener('click', () => {
+  const open = $('#recent').hidden;
+  $('#recent').hidden = !open;
+  $('#recent-toggle').setAttribute('aria-expanded', String(open));
+});
 
 function toggleItem(id, tileEl) {
   const item = state.items.find((i) => i.id === id);

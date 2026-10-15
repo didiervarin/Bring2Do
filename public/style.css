@@ -233,3 +233,7 @@ main { padding: 0 16px calc(96px + var(--safe-bottom)); }
 .sheet label.check-row[hidden] { display: none; }
 .sheet label.check-row input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); flex: none; }
 .segmented button:disabled { opacity: .35; }
+
+.section-toggle { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; padding: 6px 0; -webkit-tap-highlight-color: transparent; }
+.section-toggle .chev { display: inline-block; font-size: 1.3em; line-height: 1; transition: transform .2s; }
+.section-toggle[aria-expanded="true"] .chev { transform: rotate(90deg); }
