@@ -320,3 +320,31 @@ button:not(.primary):not(.icon-btn):not(.who-btn):not(.tab):not(.tile):not(.seg)
 .card { background: var(--surface); }
 .who-btn { background: var(--surface); border-color: var(--line); border-radius: 999px; }
 .login-box h1 { font-weight: 800; }
+
+/* ================= Barre de saisie en bas (au-dessus des onglets) ================= */
+:root { --tabbar-h: 66px; }
+.add-bar {
+  position: fixed; z-index: 7; left: 0; right: 0; margin: 0;
+  bottom: calc(var(--tabbar-h) + 14px + var(--safe-bottom));
+  padding: 18px 16px 12px;
+  background: var(--bg); border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 24px rgba(10, 16, 20, .35);
+}
+.add-bar::before {
+  content: ""; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+  width: 40px; height: 5px; border-radius: 3px; background: #6c7a84;
+}
+@media (min-width: 672px) { .add-bar { left: calc(50% - 320px); right: calc(50% - 320px); } }
+/* Suggestions : juste au-dessus de la barre */
+#suggestions {
+  position: fixed; z-index: 8; left: 16px; right: 16px; margin: 0;
+  bottom: calc(var(--tabbar-h) + 102px + var(--safe-bottom));
+  max-height: 45vh; overflow-y: auto; box-shadow: 0 8px 28px rgba(0, 0, 0, .4);
+}
+main { padding-bottom: calc(var(--tabbar-h) + 130px + var(--safe-bottom)); }
+.toast { bottom: calc(var(--tabbar-h) + 104px + var(--safe-bottom)); }
+/* Clavier ouvert : on masque les onglets, la barre se colle au clavier */
+body:has(.add-bar input:focus) .tabbar { display: none; }
+body:has(.add-bar input:focus) .add-bar { bottom: 0; padding-bottom: 12px; }
+body:has(.add-bar input:focus) #suggestions { bottom: 88px; }
+body:has(.add-bar input:focus) .toast { bottom: 96px; }
