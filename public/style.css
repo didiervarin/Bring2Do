@@ -348,3 +348,5 @@ body:has(.add-bar input:focus) .tabbar { display: none; }
 body:has(.add-bar input:focus) .add-bar { bottom: 0; padding-bottom: 12px; }
 body:has(.add-bar input:focus) #suggestions { bottom: 88px; }
 body:has(.add-bar input:focus) .toast { bottom: 96px; }
+
+.more-btn svg { display: block; }
