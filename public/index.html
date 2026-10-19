@@ -38,7 +38,10 @@
   <section id="app" class="screen" hidden>
     <header class="topbar">
       <h1 id="title">Courses</h1>
+      <div class="top-actions">
+      <button type="button" class="avatar-btn" id="avatar-btn" aria-label="Photo" hidden><img id="avatar-img" alt=""></button>
       <button type="button" class="icon-btn more-btn" id="open-settings" aria-label="Réglages"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#fff"/><circle cx="7" cy="12" r="1.9" fill="#34424c"/><circle cx="12" cy="12" r="1.9" fill="#34424c"/><circle cx="17" cy="12" r="1.9" fill="#34424c"/></svg></button>
+      </div>
     </header>
 
     <main>
@@ -137,6 +140,15 @@
     <form method="dialog">
       <h2>Réglages</h2>
       <p>Connecté en tant que <strong id="me-name"></strong></p>
+      <div class="card">
+        <h3>Photo ou logo</h3>
+        <div class="row wrap avatar-row">
+          <span class="avatar-preview" id="avatar-preview"></span>
+          <label class="file-btn">Choisir une image<input type="file" id="avatar-file" accept="image/*" hidden></label>
+          <button type="button" id="avatar-remove" class="link danger" hidden>Retirer</button>
+        </div>
+        <p class="muted small">Affichée en haut à droite, à gauche du bouton •••.</p>
+      </div>
       <div class="card">
         <h3>Notifications d'échéance</h3>
         <p id="push-status" class="muted small"></p>

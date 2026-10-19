@@ -59,6 +59,7 @@ async function refresh() {
     state.items = s.items;
     state.tasks = s.tasks;
     state.badge = s.badge;
+    showAvatar(s.avatar);
     serverOffset = s.now - Date.now();
     render();
   } catch { /* hors ligne : on garde l'affichage */ }
@@ -611,6 +612,52 @@ async function syncPushSubscription() {
     if (sub) await api('POST', '/api/push/subscribe', sub.toJSON());
   } catch { /* ignore */ }
 }
+
+// --- Photo / logo -------------------------------------------------------------
+let avatarVersion = null;
+function showAvatar(v) {
+  if (v === avatarVersion) return;
+  avatarVersion = v;
+  const url = v ? `/api/avatar?v=${v}` : '';
+  $('#avatar-btn').hidden = !v;
+  $('#avatar-remove').hidden = !v;
+  if (v) $('#avatar-img').src = url;
+  $('#avatar-preview').style.backgroundImage = v ? `url("${url}")` : '';
+}
+// Recadre l'image au centre en carré 256 px, en JPEG, pour rester légère.
+function squareJpeg(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const src = URL.createObjectURL(file);
+    img.onload = () => {
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const c = document.createElement('canvas');
+      c.width = c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 256, 256);
+      ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+      URL.revokeObjectURL(src);
+      resolve(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(src); reject(new Error('Image illisible')); };
+    img.src = src;
+  });
+}
+$('#avatar-file').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = await squareJpeg(file);
+    const r = await api('PUT', '/api/avatar', { data });
+    showAvatar(r.avatar);
+    toast('Image enregistrée ✓');
+  } catch (err) { toast(err.message); }
+});
+$('#avatar-remove').addEventListener('click', async () => {
+  try { const r = await api('DELETE', '/api/avatar'); showAvatar(r.avatar); } catch (err) { toast(err.message); }
+});
+$('#avatar-btn').addEventListener('click', () => $('#open-settings').click());
 
 $('#open-settings').addEventListener('click', async () => {
   $('#settings-sheet').showModal();

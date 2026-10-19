@@ -210,7 +210,36 @@ async function getState(env, user) {
        WHERE done = 0 AND (private = 0 OR created_by = ?) ORDER BY due_at IS NULL, due_at, created_at`).bind(user).all(),
     dueCount(env, user),
   ]);
-  return { me: user, items: items.results, tasks: tasks.results, badge, now: Date.now() };
+  const av = await env.DB.prepare(`SELECT value FROM config WHERE key = ?`).bind(`avatar_v:${user}`).first();
+  return { me: user, items: items.results, tasks: tasks.results, badge, avatar: av ? Number(av.value) : 0, now: Date.now() };
+}
+
+// --- Photo / logo de chaque utilisateur ---------------------------------------
+// Stockée en JPEG (data URL) dans config, avec un numéro de version pour le cache.
+const AVATAR_MAX = 300000; // ~220 Ko d'image
+async function getAvatar(env, user) {
+  const row = await env.DB.prepare(`SELECT value FROM config WHERE key = ?`).bind(`avatar:${user}`).first();
+  if (!row) return new Response('Introuvable', { status: 404 });
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(row.value);
+  if (!m) return new Response('Introuvable', { status: 404 });
+  const bin = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+  return new Response(bin, { headers: { 'Content-Type': m[1], 'Cache-Control': 'private, max-age=31536000, immutable' } });
+}
+async function setAvatar(request, env, user) {
+  const body = await readJson(request);
+  const data = String(body.data || '');
+  if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(data)) return err('Image invalide');
+  if (data.length > AVATAR_MAX) return err('Image trop lourde');
+  const v = String(Date.now());
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).bind(`avatar:${user}`, data),
+    env.DB.prepare(`INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`).bind(`avatar_v:${user}`, v),
+  ]);
+  return json({ avatar: Number(v) });
+}
+async function deleteAvatar(env, user) {
+  await env.DB.prepare(`DELETE FROM config WHERE key IN (?, ?)`).bind(`avatar:${user}`, `avatar_v:${user}`).run();
+  return json({ avatar: 0 });
 }
 
 // --- Courses -----------------------------------------------------------------
@@ -463,6 +492,9 @@ async function handleApi(request, env, url) {
     return json({ user, name: USERS[user].name, vapidPublicKey: vapid.publicKey });
   }
   if (path === '/api/state' && method === 'GET') return json(await getState(env, user));
+  if (path === '/api/avatar' && method === 'GET') return getAvatar(env, user);
+  if (path === '/api/avatar' && method === 'PUT') return setAvatar(request, env, user);
+  if (path === '/api/avatar' && method === 'DELETE') return deleteAvatar(env, user);
 
   if (path === '/api/items' && method === 'POST') return addItem(request, env, user);
   let m = path.match(/^\/api\/items\/([a-f0-9]+)$/);
