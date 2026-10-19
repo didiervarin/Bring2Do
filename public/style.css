@@ -17,7 +17,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   color-scheme: light dark;
 }
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark), (prefers-color-scheme: light) {
   :root {
     --bg: #16181a;
     --surface: #212427;
@@ -237,3 +237,86 @@ main { padding: 0 16px calc(96px + var(--safe-bottom)); }
 .section-toggle { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; padding: 6px 0; -webkit-tap-highlight-color: transparent; }
 .section-toggle .chev { display: inline-block; font-size: 1.3em; line-height: 1; transition: transform .2s; }
 .section-toggle[aria-expanded="true"] .chev { transform: rotate(90deg); }
+
+/* ================= Thème ardoise (inspiré de la capture) ================= */
+:root, :root:root {
+  --bg: #34424c;
+  --surface: #283640;
+  --surface-2: #3e4d58;
+  --text: #f2f5f6;
+  --muted: #a9b6be;
+  --line: #3b4a55;
+  --accent: #5fa596;
+  --accent-text: #ffffff;
+  --tile: #5fa596;
+  --tile-recent: #283640;
+  --danger: #ff7b6b;
+  --warn-bg: #4a2f2f;
+  --radius: 18px;
+  --shadow: none;
+  color-scheme: dark;
+}
+body { font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+
+/* En-tête : grand titre gras, bouton réglages en pilule */
+.topbar { padding: calc(14px + var(--safe-top)) 18px 8px; }
+.topbar h1 { font-size: 38px; font-weight: 800; letter-spacing: -.01em; }
+.icon-btn { background: #3e4d58; border: 1px solid #4c5b66; width: 48px; height: 48px; color: #fff; }
+.icon-btn.small { width: 52px; height: 52px; border-radius: 50%; background: var(--accent); border: 0; color: #fff; font-size: 30px; font-weight: 300; }
+
+/* Champs en pilule blanche avec loupe */
+.add-bar { gap: 12px; align-items: center; margin: 6px 0 16px; }
+.add-bar input {
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%2366747d' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5 20 20'/%3E%3C/svg%3E") no-repeat 16px center;
+  color: #1f2a31; border: 0; border-radius: 999px; padding: 14px 18px 14px 50px; font-size: 18px;
+}
+.add-bar input::placeholder { color: #66747d; }
+.add-bar input:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent); }
+input[type=password], .sheet input[type=text], .sheet input[type=datetime-local], .sheet textarea, select {
+  background: var(--surface); border-color: var(--line); border-radius: 14px;
+}
+
+/* Titres de section : texte blanc, chevron à gauche */
+.section-title { font-size: 21px; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--text); margin: 24px 0 10px; }
+.section-toggle { flex-direction: row-reverse; gap: 12px; padding: 4px 0 !important; background: none !important; border-radius: 0 !important; }
+.section-toggle .chev { font-size: 1.15em; font-weight: 700; }
+
+/* Tuiles */
+.tiles { gap: 10px; }
+.tile { border-radius: 16px; }
+.tile.recent { background: var(--surface); color: var(--text); }
+.suggestions { background: var(--surface); }
+
+/* Listes (tâches) en cartes ardoise à séparateurs */
+.group { background: var(--surface); border-radius: var(--radius); }
+.task { padding: 16px 18px; border-bottom-color: var(--line); }
+.task-title { font-size: 18px; font-weight: 600; }
+.check { border-color: #8fa0aa; }
+.filter, .segmented { background: var(--surface); border-radius: 999px; padding: 4px; }
+.seg, .segmented button { border-radius: 999px !important; color: var(--muted); }
+.seg.active, .segmented button.active { background: var(--surface-2) !important; color: var(--text); }
+.chip { background: var(--surface-2); }
+.chip.flo { background: #2d4660; color: #b9d5f5; }
+.chip.pouille { background: #57304a; color: #f5c0da; }
+
+/* Barre d'onglets flottante en pilule */
+.tabbar {
+  left: 16px; right: 16px; bottom: calc(10px + var(--safe-bottom));
+  padding: 6px; border-radius: 999px; border: 1px solid #4c5b66;
+  background: color-mix(in srgb, #3e4d58 92%, transparent);
+}
+.tab { border-radius: 999px; padding: 8px 0 6px; color: #dfe6ea; font-size: 13px; }
+.tab.active { background: #283640; color: var(--accent); }
+main { padding-bottom: calc(110px + var(--safe-bottom)); }
+.toast { bottom: calc(96px + var(--safe-bottom)); background: #1f2a31; }
+
+/* Boutons et feuilles */
+button:not(.primary):not(.icon-btn):not(.who-btn):not(.tab):not(.tile):not(.seg):not(.link):not(.check):not(.section-toggle) {
+  background: var(--surface-2); border-radius: 999px;
+}
+.primary { border-radius: 999px; padding: 13px 22px; }
+.sheet { background: var(--bg); border-radius: 24px 24px 0 0; }
+.sheet::backdrop { background: rgba(10, 16, 20, .55); }
+.card { background: var(--surface); }
+.who-btn { background: var(--surface); border-color: var(--line); border-radius: 999px; }
+.login-box h1 { font-weight: 800; }
