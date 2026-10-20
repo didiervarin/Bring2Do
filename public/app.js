@@ -474,7 +474,10 @@ $('#add-task').addEventListener('submit', (e) => {
 });
 $('#task-more').addEventListener('click', () => openTaskSheet(null, $('#task-input').value.trim()));
 // La barre blanche ouvre la même fiche que le bouton +.
-$('#task-input').addEventListener('click', (e) => { e.preventDefault(); $('#task-input').blur(); openTaskSheet(null); });
+// Ouverture dès le contact du doigt, sans donner le focus au champ (sinon la barre bouge et il faut toucher deux fois).
+const openNewTask = () => { if (!$('#task-sheet').open) openTaskSheet(null); };
+$('#task-input').addEventListener('pointerdown', (e) => { e.preventDefault(); openNewTask(); });
+$('#task-input').addEventListener('focus', () => { $('#task-input').blur(); openNewTask(); });
 
 // Feuille d'une tâche
 let editingTask = null;
