@@ -473,6 +473,8 @@ $('#add-task').addEventListener('submit', (e) => {
   mutate('POST', '/api/tasks', { title, assignee: 'both' }).catch(() => {});
 });
 $('#task-more').addEventListener('click', () => openTaskSheet(null, $('#task-input').value.trim()));
+// La barre blanche ouvre la même fiche que le bouton +.
+$('#task-input').addEventListener('click', (e) => { e.preventDefault(); $('#task-input').blur(); openTaskSheet(null); });
 
 // Feuille d'une tâche
 let editingTask = null;
