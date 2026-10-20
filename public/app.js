@@ -467,10 +467,10 @@ $('#add-task').addEventListener('submit', (e) => {
   const title = $('#task-input').value.trim();
   if (!title) return;
   $('#task-input').value = '';
-  const tmp = { id: `tmp${Math.random()}`, title, note: '', due_at: null, assignee: 'both', done: 0, created_by: state.me, created_at: now() };
+  const tmp = { id: `tmp${Math.random()}`, title, note: '', due_at: null, assignee: state.me, done: 0, created_by: state.me, created_at: now() };
   state.tasks.push(tmp);
   render();
-  mutate('POST', '/api/tasks', { title, assignee: 'both' }).catch(() => {});
+  mutate('POST', '/api/tasks', { title, assignee: state.me }).catch(() => {});
 });
 $('#task-more').addEventListener('click', () => openTaskSheet(null, $('#task-input').value.trim()));
 // La barre blanche ouvre la même fiche que le bouton +.
@@ -504,7 +504,7 @@ function openTaskSheet(task, title = '') {
   $('#task-title').value = task ? task.title : title;
   $('#task-due').value = task?.due_at ? toLocalInput(task.due_at) : '';
   $('#task-note').value = task?.note || '';
-  setAssignee(task ? task.assignee : 'both');
+  setAssignee(task ? task.assignee : state.me);
   $('#task-private').checked = !!task?.private;
   // Seul l'auteur peut changer ce réglage.
   $('#task-private-row').hidden = !!task && task.created_by !== state.me;
