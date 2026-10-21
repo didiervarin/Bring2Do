@@ -345,9 +345,10 @@ main { padding-bottom: calc(var(--tabbar-h) + 130px + var(--safe-bottom)); }
 .toast { bottom: calc(var(--tabbar-h) + 104px + var(--safe-bottom)); }
 /* Clavier ouvert : on masque les onglets, la barre se colle au clavier */
 body:has(#item-input:focus) .tabbar { display: none; }
-body:has(#item-input:focus) .add-bar { bottom: 0; padding-bottom: 12px; }
-body:has(#item-input:focus) #suggestions { bottom: 88px; }
-body:has(#item-input:focus) .toast { bottom: 96px; }
+/* --kb = hauteur du clavier, calculée en JS (visualViewport) */
+body:has(#item-input:focus) .add-bar { bottom: var(--kb, 0px); padding-bottom: 12px; }
+body:has(#item-input:focus) #suggestions { bottom: calc(var(--kb, 0px) + 88px); }
+body:has(#item-input:focus) .toast { bottom: calc(var(--kb, 0px) + 96px); }
 
 .more-btn svg { display: block; }
 

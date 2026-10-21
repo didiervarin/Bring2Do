@@ -716,3 +716,25 @@ $('#logout').addEventListener('click', async () => {
 // ---------------------------------------------------------------------------
 if ('serviceWorker' in navigator) getRegistration().catch(() => {});
 start();
+
+// ---------------------------------------------------------------------------
+// Clavier iPhone : la page n'est plus redimensionnée par le clavier (sinon, à sa
+// fermeture, iOS laisse parfois la barre et les onglets coincés au milieu de l'écran).
+// On mesure la hauteur du clavier pour ne remonter la barre « J'ai besoin… » que pendant la saisie.
+// ---------------------------------------------------------------------------
+(function keyboardOffset() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const update = () => {
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty('--kb', `${kb > 60 ? Math.round(kb) : 0}px`);
+  };
+  vv.addEventListener('resize', update);
+  vv.addEventListener('scroll', update);
+  // Après fermeture du clavier, on remet la page d'aplomb.
+  document.addEventListener('focusout', () => setTimeout(() => {
+    update();
+    if (!document.activeElement || document.activeElement === document.body) window.scrollTo(window.scrollX, window.scrollY);
+  }, 300));
+  update();
+})();
