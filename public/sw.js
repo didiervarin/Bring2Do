@@ -4,8 +4,8 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener('push', (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'Flo & Pouille', body: event.data?.text() }; }
-  const title = data.title || 'Flo & Pouille';
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'Bring2Do', body: event.data?.text() }; }
+  const title = data.title || 'Bring2Do';
   const tasks = [
     self.registration.showNotification(title, {
       body: data.body || '',

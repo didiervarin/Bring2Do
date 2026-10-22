@@ -592,7 +592,7 @@ async function updatePushStatus() {
   const reg = await getRegistration();
   const sub = await reg?.pushManager.getSubscription();
   if (Notification.permission === 'denied') {
-    status.textContent = 'Notifications refusées. Réactive-les dans Réglages iOS → Notifications → Flo & Pouille.';
+    status.textContent = 'Notifications refusées. Réactive-les dans Réglages iOS → Notifications → Bring2Do.';
     enableBtn.hidden = true; testBtn.hidden = true;
   } else if (sub && Notification.permission === 'granted') {
     status.textContent = 'Activées sur cet iPhone ✓ Tu seras prévenu(e) à l’échéance de tes tâches.';
