@@ -67,7 +67,7 @@
           <button type="button" class="seg active" data-filter="mine">Les miennes</button>
         </div>
         <form id="add-task" class="add-bar" autocomplete="off">
-          <input id="task-input" type="text" placeholder="Nouvelle tâche" enterkeyhint="done" autocapitalize="sentences">
+          <input id="task-input" type="text" placeholder="Nouvelle tâche" readonly inputmode="none" tabindex="-1" aria-haspopup="dialog">
           <button type="button" id="task-more" class="icon-btn small" aria-label="Nouvelle tâche avec détails">＋</button>
         </form>
         <div id="task-list"></div>

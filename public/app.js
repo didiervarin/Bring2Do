@@ -461,11 +461,11 @@ $('#task-list').addEventListener('click', (e) => {
   }
 });
 
-// ✓ du clavier : même chose que + (pas d'ajout rapide).
-$('#add-task').addEventListener('submit', (e) => {
-  e.preventDefault();
-  $('#task-more').click();
-});
+// Toucher la barre « Nouvelle tâche » ouvre directement la fiche (comme +),
+// dès le contact du doigt et sans donner le focus au champ (sinon il faut toucher deux fois).
+$('#add-task').addEventListener('submit', (e) => { e.preventDefault(); $('#task-more').click(); });
+$('#task-input').addEventListener('pointerdown', (e) => { e.preventDefault(); $('#task-more').click(); });
+$('#task-input').addEventListener('focus', () => $('#task-more').click());
 // + : fiche complète (date, heure, attribution…) pré-remplie avec le titre tapé dans la barre.
 $('#task-more').addEventListener('click', (e) => {
   e.preventDefault();

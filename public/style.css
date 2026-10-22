@@ -361,3 +361,5 @@ body:has(.add-bar input:focus) .toast { bottom: calc(var(--kb, 0px) + 96px); }
   background-image: none; box-shadow: inset 0 0 0 1px var(--line); }
 .sheet label.file-btn { display: inline-flex; flex-direction: row; color: var(--accent-text); background: var(--accent); border-radius: 999px; padding: 11px 18px; font-weight: 600; font-size: 16px; cursor: pointer; }
 
+
+#task-input { cursor: pointer; caret-color: transparent; }
