@@ -461,19 +461,12 @@ $('#task-list').addEventListener('click', (e) => {
   }
 });
 
-// Ajout rapide (✓ du clavier) : tâche sans échéance, attribuée à soi
+// ✓ du clavier : même chose que + (pas d'ajout rapide).
 $('#add-task').addEventListener('submit', (e) => {
   e.preventDefault();
-  const title = $('#task-input').value.trim();
-  if (!title) return;
-  $('#task-input').value = '';
-  const tmp = { id: `tmp${Math.random()}`, title, note: '', due_at: null, assignee: state.me, done: 0, created_by: state.me, created_at: now() };
-  state.tasks.push(tmp);
-  render();
-  mutate('POST', '/api/tasks', { title, assignee: state.me }).catch(() => {});
+  $('#task-more').click();
 });
-// On tape le titre dans la barre : ✓ du clavier = ajout rapide ;
-// + = fiche complète (date, heure, attribution…) pré-remplie avec le titre tapé.
+// + : fiche complète (date, heure, attribution…) pré-remplie avec le titre tapé dans la barre.
 $('#task-more').addEventListener('click', (e) => {
   e.preventDefault();
   const title = $('#task-input').value.trim();
