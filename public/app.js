@@ -461,7 +461,7 @@ $('#task-list').addEventListener('click', (e) => {
   }
 });
 
-// Ajout rapide (Entrée ou +) : tâche sans échéance, attribuée à soi
+// Ajout rapide (✓ du clavier) : tâche sans échéance, attribuée à soi
 $('#add-task').addEventListener('submit', (e) => {
   e.preventDefault();
   const title = $('#task-input').value.trim();
@@ -472,12 +472,13 @@ $('#add-task').addEventListener('submit', (e) => {
   render();
   mutate('POST', '/api/tasks', { title, assignee: state.me }).catch(() => {});
 });
-// Comme pour les courses : on tape dans la barre, Entrée ou + ajoute la tâche.
-// + avec la barre vide : ouvre la fiche détaillée.
+// On tape le titre dans la barre : ✓ du clavier = ajout rapide ;
+// + = fiche complète (date, heure, attribution…) pré-remplie avec le titre tapé.
 $('#task-more').addEventListener('click', (e) => {
-  if ($('#task-input').value.trim()) return; // le formulaire s'envoie normalement
   e.preventDefault();
-  openTaskSheet(null);
+  const title = $('#task-input').value.trim();
+  $('#task-input').blur();
+  if (!$('#task-sheet').open) openTaskSheet(null, title);
 });
 
 // Feuille d'une tâche
