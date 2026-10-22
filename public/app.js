@@ -461,7 +461,7 @@ $('#task-list').addEventListener('click', (e) => {
   }
 });
 
-// Ajout rapide (Entrée) : tâche sans échéance pour les deux
+// Ajout rapide (Entrée ou +) : tâche sans échéance, attribuée à soi
 $('#add-task').addEventListener('submit', (e) => {
   e.preventDefault();
   const title = $('#task-input').value.trim();
@@ -472,12 +472,13 @@ $('#add-task').addEventListener('submit', (e) => {
   render();
   mutate('POST', '/api/tasks', { title, assignee: state.me }).catch(() => {});
 });
-$('#task-more').addEventListener('click', () => openTaskSheet(null, $('#task-input').value.trim()));
-// La barre blanche ouvre la même fiche que le bouton +.
-// Ouverture dès le contact du doigt, sans donner le focus au champ (sinon la barre bouge et il faut toucher deux fois).
-const openNewTask = () => { if (!$('#task-sheet').open) openTaskSheet(null); };
-$('#task-input').addEventListener('pointerdown', (e) => { e.preventDefault(); openNewTask(); });
-$('#task-input').addEventListener('focus', () => { $('#task-input').blur(); openNewTask(); });
+// Comme pour les courses : on tape dans la barre, Entrée ou + ajoute la tâche.
+// + avec la barre vide : ouvre la fiche détaillée.
+$('#task-more').addEventListener('click', (e) => {
+  if ($('#task-input').value.trim()) return; // le formulaire s'envoie normalement
+  e.preventDefault();
+  openTaskSheet(null);
+});
 
 // Feuille d'une tâche
 let editingTask = null;
@@ -738,3 +739,9 @@ start();
   }, 300));
   update();
 })();
+
+// Bouton + des barres de saisie : on garde le focus du champ pendant l'appui,
+// sinon la barre bouge à la fermeture du clavier et l'appui tombe à côté.
+document.querySelectorAll('.add-bar .icon-btn').forEach((b) => b.addEventListener('pointerdown', (e) => {
+  if (b.closest('.add-bar').querySelector('input') === document.activeElement) e.preventDefault();
+}));
