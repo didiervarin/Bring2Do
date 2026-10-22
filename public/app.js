@@ -410,7 +410,6 @@ function taskHtml(t) {
   if (t.due_at) parts.push(`<span class="due${late ? ' late' : ''}">${late ? '⏰ ' : '🗓 '}${esc(formatDue(t.due_at))}</span>`);
   parts.push(t.private ? `<span class="chip ${t.assignee}">🔒 Privée</span>` : `<span class="chip ${t.assignee}">${esc(NAMES[t.assignee])}</span>`);
   if (t.done && t.done_by) parts.push(`<span>fait par ${esc(NAMES[t.done_by])}</span>`);
-  if (t.note) parts.push(`<span class="note">${esc(t.note.split('\n')[0])}</span>`);
   return `<div class="task${t.done ? ' done' : ''}" data-id="${t.id}">
     <button type="button" class="check" aria-label="${t.done ? 'Marquer non faite' : 'Marquer faite'}">${t.done ? '✓' : ''}</button>
     <div class="task-body"><div class="task-title">${esc(t.title)}</div><div class="task-sub">${parts.join('')}</div></div>
@@ -498,7 +497,6 @@ function openTaskSheet(task, title = '') {
   $('#task-sheet-title').textContent = task ? 'Modifier la tâche' : 'Nouvelle tâche';
   $('#task-title').value = task ? task.title : title;
   $('#task-due').value = task?.due_at ? toLocalInput(task.due_at) : '';
-  $('#task-note').value = task?.note || '';
   setAssignee(task ? task.assignee : state.me);
   $('#task-private').checked = !!task?.private;
   // Seul l'auteur peut changer ce réglage.
@@ -530,7 +528,6 @@ $('#task-form').addEventListener('submit', (e) => {
     title: $('#task-title').value.trim(),
     due_at: fromLocalInput($('#task-due').value),
     assignee: sheetAssignee,
-    note: $('#task-note').value.trim(),
   };
   if (!editingTask || editingTask.created_by === state.me) body.private = $('#task-private').checked ? 1 : 0;
   if (!body.title) return;
