@@ -736,3 +736,26 @@ start();
 document.querySelectorAll('.add-bar .icon-btn').forEach((b) => b.addEventListener('pointerdown', (e) => {
   if (b.closest('.add-bar').querySelector('input') === document.activeElement) e.preventDefault();
 }));
+
+// ---------------------------------------------------------------------------
+// Glisser le doigt horizontalement pour passer de Courses à Tâches et inversement.
+// Glisser vers la gauche → onglet suivant (Tâches) ; vers la droite → onglet précédent (Courses).
+// ---------------------------------------------------------------------------
+(function swipeTabs() {
+  let x0 = null, y0 = 0, t0 = 0;
+  const ignore = (el) => el.closest('dialog, input, textarea, select, .add-bar, #suggestions');
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1 || $('#app').hidden || ignore(e.target)) { x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    // Geste net : au moins 70 px, nettement plus horizontal que vertical, en moins d'une seconde.
+    if (Math.abs(dx) < 70 || Math.abs(dx) < 2 * Math.abs(dy) || Date.now() - t0 > 1000) return;
+    const next = dx < 0 ? 'taches' : 'courses';
+    if (next === state.view) return;
+    $(`.tab[data-view="${next}"]`).click();
+  }, { passive: true });
+})();
