@@ -191,10 +191,22 @@ function setView(v) {
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
   window.scrollTo({ top: 0 });
 }
-document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
-  history.replaceState(null, '', t.dataset.view === 'taches' ? '#taches' : '#');
-  setView(t.dataset.view);
-}));
+// Changement d'onglet avec fondu enchaîné (View Transitions si dispo, sinon fondu CSS).
+function switchView(v) {
+  if (v === state.view) return;
+  history.replaceState(null, '', v === 'taches' ? '#taches' : '#');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce && document.startViewTransition) {
+    document.startViewTransition(() => setView(v));
+    return;
+  }
+  setView(v);
+  if (!reduce) {
+    const el = $(`#view-${v}`);
+    el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in');
+  }
+}
+document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => switchView(t.dataset.view)));
 
 // ---------------------------------------------------------------------------
 // Rendu

@@ -363,3 +363,9 @@ body:has(.add-bar input:focus) .toast { bottom: calc(var(--kb, 0px) + 96px); }
 
 
 #task-input { cursor: pointer; caret-color: transparent; }
+
+/* Fondu enchaîné entre Courses et Tâches */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; animation-timing-function: ease; }
+.tabbar { view-transition-name: tabbar; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fadeIn .28s ease; }
