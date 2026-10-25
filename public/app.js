@@ -321,8 +321,10 @@ function toggleItem(id, tileEl) {
   tileEl?.classList.add('leaving');
   item.on_list = onList ? 1 : 0;
   if (!onList) { item.last_used_at = now(); item.spec = ''; } else { item.added_by = state.me; item.updated_at = now(); }
+  const patch = { on_list: onList };
+  if (onList && isEgg(item.name)) { item.spec = withEggDate(item.name, item.spec); patch.spec = item.spec; }
   setTimeout(render, 160);
-  mutate('PATCH', `/api/items/${id}`, { on_list: onList }).then(() => {
+  mutate('PATCH', `/api/items/${id}`, patch).then(() => {
     if (!onList) {
       toast(`${item.name} retiré`, 'Annuler', () => {
         item.on_list = 1; item.spec = prevSpec; render();
@@ -379,8 +381,20 @@ $('#add-item').addEventListener('submit', (e) => {
   addItem(existing ? existing.name : name, spec);
 });
 
+// Œufs : à l'ajout, on note sous le nom la date limite à viser en magasin (aujourd'hui + 21 jours).
+const EGG_DAYS = 21;
+const isEgg = (name) => /^oeufs?(\s|$)/.test(normalize(name).replace(/œ/g, 'oe')); // « Œ » majuscule non géré par normalize
+function withEggDate(name, spec) {
+  if (!isEgg(name)) return spec;
+  const d = new Date(now() + EGG_DAYS * 86400e3);
+  const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const rest = String(spec || '').replace(/\s*·?\s*>= à \d{2}\/\d{2}/g, '').trim();
+  return (rest ? rest + ' · ' : '') + `>= à ${date}`;
+}
+
 function addItem(name, spec) {
   if (!name) return;
+  spec = withEggDate(name, spec);
   itemInput.value = '';
   $('#suggestions').hidden = true;
   const existing = state.items.find((i) => normalize(i.name) === normalize(name));
