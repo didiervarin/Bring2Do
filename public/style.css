@@ -369,3 +369,8 @@ body:has(.add-bar input:focus) .toast { bottom: calc(var(--kb, 0px) + 96px); }
 .tabbar { view-transition-name: tabbar; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .fade-in { animation: fadeIn 1.5s ease; }
+
+/* Noms d'articles : jamais coupés au milieu d'un mot ; taille ajustée en JS */
+.tile .n { display: block; width: 100%; overflow-wrap: normal; word-break: normal; hyphens: none; -webkit-line-clamp: unset; overflow: hidden; }
+.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tile { min-width: 0; }

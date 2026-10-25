@@ -190,6 +190,7 @@ function setView(v) {
   $('#title').textContent = v === 'courses' ? 'Courses' : 'Tâches';
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
   window.scrollTo({ top: 0 });
+  if (v === 'courses') requestAnimationFrame(() => fitTileNames());
 }
 // Changement d'onglet avec fondu enchaîné (View Transitions si dispo, sinon fondu CSS).
 function switchView(v) {
@@ -258,7 +259,22 @@ function renderCourses() {
     .slice(0, 24);
   $('#recent-wrap').hidden = !recent.length;
   $('#recent').innerHTML = recent.map((i) => tileHtml(i, true)).join('');
+  fitTileNames();
 }
+
+// Nom d'article : retour à la ligne seulement entre deux mots (2 lignes max) ;
+// si un mot ne tient pas en largeur ou si ça dépasse 2 lignes, on réduit la police.
+const NAME_MAX = 17, NAME_MIN = 10;
+function fitTileNames() {
+  document.querySelectorAll('.tile .n').forEach((el) => {
+    if (!el.offsetParent) return; // tuile masquée : on ajustera à l'affichage
+    let size = NAME_MAX;
+    el.style.fontSize = size + 'px';
+    const fits = () => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= Math.ceil(size * 1.15 * 2) + 2;
+    while (size > NAME_MIN && !fits()) { size -= 0.5; el.style.fontSize = size + 'px'; }
+  });
+}
+window.addEventListener('resize', () => fitTileNames());
 
 // Appui court = basculer ; appui long = modifier
 function bindTiles(container) {
@@ -294,6 +310,7 @@ $('#recent-toggle').addEventListener('click', () => {
   const open = $('#recent').hidden;
   $('#recent').hidden = !open;
   $('#recent-toggle').setAttribute('aria-expanded', String(open));
+  if (open) fitTileNames();
 });
 
 function toggleItem(id, tileEl) {
