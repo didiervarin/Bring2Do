@@ -164,6 +164,7 @@ async function start() {
   await refresh();
   startPolling();
   syncPushSubscription();
+  showPendingImport();
 }
 
 let pollTimer = null;
@@ -408,6 +409,72 @@ function addItem(name, spec) {
   render();
   mutate('POST', '/api/items', body).catch(() => {});
 }
+
+// ---------------------------------------------------------------------------
+// Articles envoyés par l'appli de recettes : lien /?ajouter=<JSON>
+// JSON : { from: "Titre de la recette", items: [["Nom", "précision"], …] }
+// Les articles sont proposés dans une feuille à confirmer, jamais ajoutés d'office.
+// ---------------------------------------------------------------------------
+const IMPORT_KEY = 'bring2do-import';
+(function captureImport() {
+  const params = new URLSearchParams(location.search);
+  const raw = params.get('ajouter');
+  if (raw === null) return;
+  try {
+    const data = JSON.parse(raw);
+    const items = (Array.isArray(data) ? data : data.items || [])
+      .map((x) => (Array.isArray(x) ? x : [x?.name, x?.spec]))
+      .map(([n, s]) => [String(n || '').trim().slice(0, 60), String(s || '').trim().slice(0, 60)])
+      .filter(([n]) => n)
+      .slice(0, 60);
+    if (items.length) sessionStorage.setItem(IMPORT_KEY, JSON.stringify({ from: String(data.from || '').slice(0, 120), items }));
+  } catch { /* lien abîmé : on ignore */ }
+  params.delete('ajouter');
+  const q = params.toString();
+  history.replaceState(null, '', location.pathname + (q ? `?${q}` : '') + location.hash);
+})();
+
+function showPendingImport() {
+  let data;
+  try { data = JSON.parse(sessionStorage.getItem(IMPORT_KEY) || 'null'); } catch { data = null; }
+  if (!data?.items?.length) return;
+  setView('courses');
+  $('#import-from').textContent = data.from ? `Depuis la recette « ${data.from} »` : '';
+  $('#import-list').innerHTML = data.items.map(([n, s], k) => {
+    const ex = state.items.find((i) => normalize(i.name) === normalize(n));
+    const note = ex?.on_list ? ' · déjà dans la liste' : '';
+    return `<label class="check-row"><input type="checkbox" data-k="${k}" checked>
+      <span class="txt"><span>${esc(n)}</span>${s || note ? `<span class="muted">${esc(s)}${esc(note)}</span>` : ''}</span></label>`;
+  }).join('');
+  const sync = () => {
+    const n = $('#import-list').querySelectorAll('input:checked').length;
+    $('#import-ok').textContent = n ? `Ajouter (${n})` : 'Ajouter';
+    $('#import-ok').disabled = !n;
+  };
+  $('#import-list').onchange = sync;
+  sync();
+  $('#import-sheet').showModal();
+}
+function closeImport() {
+  sessionStorage.removeItem(IMPORT_KEY);
+  $('#import-sheet').close();
+}
+$('#import-cancel').addEventListener('click', closeImport);
+$('#import-sheet').addEventListener('cancel', () => sessionStorage.removeItem(IMPORT_KEY));
+$('#import-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  let data;
+  try { data = JSON.parse(sessionStorage.getItem(IMPORT_KEY) || 'null'); } catch { data = null; }
+  const picked = [...$('#import-list').querySelectorAll('input:checked')].map((c) => data.items[Number(c.dataset.k)]);
+  closeImport();
+  for (const [name, spec] of picked) {
+    const ex = state.items.find((i) => normalize(i.name) === normalize(name));
+    // Déjà dans la liste avec une autre précision : on garde les deux.
+    const merged = ex?.on_list && ex.spec && spec && ex.spec !== spec ? `${ex.spec} + ${spec}`.slice(0, 60) : spec;
+    addItem(ex ? ex.name : name, merged);
+  }
+  toast(`${picked.length} article${picked.length > 1 ? 's' : ''} ajouté${picked.length > 1 ? 's' : ''}`);
+});
 
 // Feuille d'édition d'un article
 let editingItem = null;

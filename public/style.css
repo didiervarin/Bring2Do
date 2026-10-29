@@ -374,3 +374,11 @@ body:has(.add-bar input:focus) .toast { bottom: calc(var(--kb, 0px) + 96px); }
 .tile .n { display: block; width: 100%; overflow-wrap: normal; word-break: normal; hyphens: none; -webkit-line-clamp: unset; overflow: hidden; }
 .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .tile { min-width: 0; }
+
+/* ---------- Articles reçus d'une recette ---------- */
+#import-from:empty { display: none; }
+#import-from { margin: -8px 0 0; }
+.import-list { display: flex; flex-direction: column; max-height: 52vh; overflow-y: auto; margin: 0 -4px; }
+.sheet .import-list label.check-row { padding: 9px 4px; border-bottom: 1px solid var(--line, rgba(0,0,0,.08)); }
+.import-list .txt { display: flex; flex-direction: column; min-width: 0; }
+.import-list .txt .muted { font-size: 14px; }
